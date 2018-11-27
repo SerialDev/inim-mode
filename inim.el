@@ -13,6 +13,11 @@
 
 ;; Usage
 
+(defcustom inim-shell-buffer-name "*Inim*"
+  "Name of buffer for inim."
+  :group 'inim
+  :type 'string)
+
 (defun inim-is-running? ()
   "Return non-nil if inim is running."
   (comint-check-proc inim-shell-buffer-name))
@@ -49,16 +54,28 @@ Unless ARG is non-nil, switch to the buffer."
   "Start inim."
   (comint-exec inim-shell-buffer-name "inim" inim-program nil inim-args))
 
+(defun inim-split (separator s &optional omit-nulls)
+  "Split S into substrings bounded by matches for regexp SEPARATOR.
+If OMIT-NULLS is non-nil, zero-length substrings are omitted.
+This is a simple wrapper around the built-in `split-string'."
+  (declare (side-effect-free t))
+  (save-match-data
+    (split-string s separator omit-nulls)))
+
+
+(defun inim-match-indentation(data)
+  (regex-match "^[[:space:]]*" data 0))
+
 
 (defun inim-eval-region (begin end)
   "Evaluate region between BEGIN and END."
   (interactive "r")
   (inim t)
-  (comint-send-string inim-shell-buffer-name
-    (buffer-substring-no-properties begin end))
-  (comint-send-string inim-shell-buffer-name "\n")
-  (comint-send-string inim-shell-buffer-name "\n")
-  )
+  (progn
+    (maintain-indentation (inim-split "\n"
+				      (buffer-substring-no-properties begin end)) 0)
+    (comint-send-string inim-shell-buffer-name ";\n")
+  ))
 
 
 ;; (defun inim-type-check ()
@@ -116,11 +133,6 @@ current one."
 
 
 ;;; Shell integration
-
-(defcustom inim-shell-buffer-name "*Inim*"
-  "Name of buffer for inim."
-  :group 'inim
-  :type 'string)
 
 (defcustom inim-shell-interpreter "inim"
   "default repl for shell"
