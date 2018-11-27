@@ -54,6 +54,20 @@ Unless ARG is non-nil, switch to the buffer."
   "Start inim."
   (comint-exec inim-shell-buffer-name "inim" inim-program nil inim-args))
 
+(defun maintain-indentation (current previous-indent)
+  (when current
+    (let ((current-indent (length (match-indentation (car current)))))
+      (if (< current-indent previous-indent)
+	  (progn
+	    (comint-send-string inim-shell-buffer-name "\n")
+	    (comint-send-string inim-shell-buffer-name (car current))
+	    (comint-send-string inim-shell-buffer-name "\n"))
+      (progn
+	(comint-send-string inim-shell-buffer-name (car current))
+	(comint-send-string inim-shell-buffer-name "\n")))
+      (maintain-indentation (cdr current) current-indent)
+      )))
+
 (defun inim-split (separator s &optional omit-nulls)
   "Split S into substrings bounded by matches for regexp SEPARATOR.
 If OMIT-NULLS is non-nil, zero-length substrings are omitted.
