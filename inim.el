@@ -56,7 +56,7 @@ Unless ARG is non-nil, switch to the buffer."
 
 (defun maintain-indentation (current previous-indent)
   (when current
-    (let ((current-indent (length (match-indentation (car current)))))
+    (let ((current-indent (length (inim-match-indentation (car current)))))
       (if (< current-indent previous-indent)
 	  (progn
 	    (comint-send-string inim-shell-buffer-name "\n")
