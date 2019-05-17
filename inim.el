@@ -13,6 +13,12 @@
 
 ;; Usage
 
+
+(defun regex-match ( regex-string string-search match-num )
+  (string-match regex-string string-search)
+  (match-string match-num string-search))
+
+
 (defcustom inim-shell-buffer-name "*Inim*"
   "Name of buffer for inim."
   :group 'inim
