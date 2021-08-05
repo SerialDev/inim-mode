@@ -30,6 +30,7 @@ git clone https://github.com/SerialDev/inim-mode
 
 ## Hard Requirements
 Inim is required 
+s.el is required
 
 
 # Current functionality:

@@ -27,6 +27,7 @@
 (defun inim-is-running? ()
   "Return non-nil if inim is running."
   (comint-check-proc inim-shell-buffer-name))
+
 (defalias 'inim-is-running-p #'inim-is-running?)
 
 ;;;###autoload
@@ -56,9 +57,35 @@ Unless ARG is non-nil, switch to the buffer."
 (defalias 'inferior-nim #'inim)
 
 
+(defmacro with-system (type &rest body)
+  "Evaluate BODY if `system-type' equals TYPE."
+  (declare (indent defun))
+  `(when (eq system-type ',type)
+     ,@body))
+
 (defun inim-startup ()
   "Start inim."
-  (comint-exec inim-shell-buffer-name "inim" inim-program nil inim-args))
+  
+(with-system darwin
+  (comint-exec inim-shell-buffer-name
+	       (s-prepend
+		(s-prepend
+		 "cd " (shell-command-to-string "nimble path inim"))
+	       " && ./inim") inim-program nil inim-args)
+  )
+  
+
+(with-system gnu/linux
+  (comint-exec inim-shell-buffer-name "inim" inim-program nil inim-args)
+
+  )
+
+(with-system windows
+    (comint-exec inim-shell-buffer-name "inim" inim-program nil inim-args)
+
+  )
+
+)
 
 (defun maintain-indentation (current previous-indent)
   (when current
@@ -241,24 +268,30 @@ See `comint-prompt-read-only' for details."
   (set (make-local-variable 'compilation-error-regexp-alist)
        inim-shell-compilation-regexp-alist)
   (setq comint-use-prompt-regexp t)
+
   (setq comint-inhibit-carriage-motion nil)
+  
   (setq-local comint-prompt-read-only inim-prompt-read-only)
-  (when inim-shell-enable-font-lock
-    (set-syntax-table nim-mode-syntax-table)
-    (set (make-local-variable 'font-lock-defaults)
-	 '(nim-mode-font-lock-keywords nil nil nil nil))
-    (set (make-local-variable 'syntax-propertize-function)
-    	 (eval
-    	  "Unfortunately eval is needed to make use of the dynamic value of comint-prompt-regexp"
-    	  '(syntax-propertize-rules
-    	    '(comint-prompt-regexp
-    	       (0 (ignore
-    		   (put-text-property
-    		    comint-last-input-start end 'syntax-table
-    		    python-shell-output-syntax-table)
-    		   (font-lock-unfontify--region comint-last-input-start end))))
-    	    )))
-    (compilation-shell-minor-mode 1)))
+     
+  ;; (when inim-shell-enable-font-lock
+  ;;   (set-syntax-table nim-mode-syntax-table)
+  ;;   (set (make-local-variable 'font-lock-defaults)
+  ;; 	 ;; '(nim-mode-font-lock-keywords nil nil nil nil))
+  ;;   )
+  ;;   (set (make-local-variable 'syntax-propertize-function)
+  ;;   	 (eval
+  ;;   	  "Unfortunately eval is needed to make use of the dynamic value of comint-prompt-regexp"
+  ;;   	  '(syntax-propertize-rules
+  ;;   	    '(comint-prompt-regexp
+  ;;   	       (0 (ignore
+  ;;   		   (put-text-property
+  ;;   		    comint-last-input-start end 'syntax-table
+  ;;   		    python-shell-output-syntax-table)
+  ;;   		   (font-lock-unfontify--region comint-last-input-start end))))
+  ;;   	    )))
+  ;;   (compilation-shell-minor-mode 1)))
+
+  )
 
 (progn
   (define-key nim-mode-map (kbd "C-c C-b") #'inim-eval-buffer)
